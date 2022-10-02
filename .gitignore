@@ -1,3 +1,6 @@
+# Visual Studio intermediate files
+.vs
+
 # Prerequisites
 *.d
 
