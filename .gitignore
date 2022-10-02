@@ -1,6 +1,11 @@
 # Visual Studio intermediate files
 .vs
 
+# Project build & result directories
+x64
+Debug
+Release
+
 # Prerequisites
 *.d
 
