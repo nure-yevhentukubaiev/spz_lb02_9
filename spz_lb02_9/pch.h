@@ -1,3 +1,6 @@
 #pragma once
 #include <stdio.h>
+#include <tchar.h>
 #include <wbemidl.h>
+
+#pragma comment(lib, "wbemuuid.lib")
