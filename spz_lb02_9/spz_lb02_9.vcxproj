@@ -132,6 +132,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="task01.c" />
+    <ClCompile Include="task02.c" />
+    <ClCompile Include="task03.c" />
+    <ClCompile Include="task04.c" />
+    <ClCompile Include="task05.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="task01.h" />
+    <ClInclude Include="task02.h" />
+    <ClInclude Include="task03.h" />
+    <ClInclude Include="task04.h" />
+    <ClInclude Include="task05.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

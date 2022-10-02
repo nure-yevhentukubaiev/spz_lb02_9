@@ -18,5 +18,40 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="task05.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task04.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task03.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task02.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task01.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task01.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task02.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task03.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task04.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="task05.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
