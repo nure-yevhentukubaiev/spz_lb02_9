@@ -2,15 +2,11 @@
 #include "globals.h"
 #include "pch.h"
 
-/* Initialize COM and security */
 HRESULT CoInit(VOID);
 
-/* Connect to WMI */
-HRESULT WMIConnect(VOID);
-
-/* Close WMI connection */
 VOID WMIClose(VOID);
 
+HRESULT WMIConnect(VOID);
 
 HRESULT CoInit(VOID)
 {
@@ -68,7 +64,20 @@ HRESULT WMIConnect(VOID)
 		_tprintf_s(_T("ConnectServer failed, hr: %X\n"), hr);
 	}
 
-
+	// Set the proxy so that impersonation of the client occurs.
+	hr = CoSetProxyBlanket(
+		pSvc,
+		RPC_C_AUTHN_WINNT,
+		RPC_C_AUTHZ_NONE,
+		NULL,
+		RPC_C_AUTHN_LEVEL_CALL,
+		RPC_C_IMP_LEVEL_IMPERSONATE,
+		NULL,
+		EOAC_NONE
+	);
+	if(FAILED(hr)) {
+		_tprintf_s(_T("CoSetProxyBlanket failed, hr: %X\n"), hr);
+	}
 
 	return hr;
 }
