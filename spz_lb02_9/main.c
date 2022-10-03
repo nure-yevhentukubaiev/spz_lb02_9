@@ -1,11 +1,14 @@
 #define _WIN32_DCOM
+#include "globals.h"
 #include "pch.h"
 
-HRESULT CoWMIInit(VOID);
+HRESULT CoInit(VOID);
 
-VOID CoWMIUninit(VOID);
+VOID WMIClose(VOID);
 
-HRESULT CoWMIInit(VOID)
+HRESULT WMIConnect(VOID);
+
+HRESULT CoInit(VOID)
 {
 	HRESULT hr = S_OK;
 	
@@ -28,23 +31,60 @@ HRESULT CoWMIInit(VOID)
 	);
 	if (FAILED(hr)) {
 		_tprintf_s(_T("CoInitializeSecurity failed, hr: %X\n"), hr);
-		return hr;
 	}
-
-	return S_OK;
+	return hr;
 }
 
-VOID CoWMIUninit(VOID)
+HRESULT WMIConnect(VOID)
 {
-	CoUninitialize();
+	
+	HRESULT hr = CoCreateInstance(
+		CLSID_WbemLocator,
+		0,
+		CLSCTX_INPROC_SERVER,
+		IID_IWbemLocator,
+		(LPVOID *)&pLoc
+	);
+	if (FAILED(hr)) {
+		_tprintf_s(_T("CoCreateInstace failed, hr: %X\n"), hr);
+		return hr;
+	}
+	
+	hr = pLoc->ConnectServer(
+		(BSTR)_T("ROOT\\CimV2"),
+		NULL,
+		NULL,
+		0,
+		NULL,
+		0,
+		0,
+		&pSvc
+	);
+	if (FAILED(hr)) {
+		_tprintf_s(_T("ConnectServer failed, hr: %X\n"), hr);
+		pLoc->Release();
+	}
+
+
+
+	return hr;
+}
+
+VOID WMIClose(VOID)
+{
+	pSvc->Release();
+	pLoc->Release();
+	pEnumerator->Release();
+	pclsObj->Release();
 	return;
 }
 
 int _tmain(int argc, TCHAR **argv)
 {
-	HRESULT hr = CoWMIInit();
+	HRESULT hr = CoInit() || WMIConnect();
 	if (SUCCEEDED(hr)) {
 	}
-	CoWMIUninit();
+	WMIClose();
+	CoUninitialize();
 	return (int)hr;
 }
