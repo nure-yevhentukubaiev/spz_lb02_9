@@ -131,13 +131,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="globals.c" />
-    <ClCompile Include="main.c" />
+    <ClCompile Include="globals.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="task01.c" />
-    <ClCompile Include="task02.c" />
-    <ClCompile Include="task03.c" />
-    <ClCompile Include="task04.c" />
-    <ClCompile Include="task05.c" />
+    <ClCompile Include="task02.cpp" />
+    <ClCompile Include="task03.cpp" />
+    <ClCompile Include="task04.cpp" />
+    <ClCompile Include="task05.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="globals.h" />

@@ -15,25 +15,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.c">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="task05.c">
+    <ClCompile Include="task05.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="task04.c">
+    <ClCompile Include="task04.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="task03.c">
+    <ClCompile Include="task03.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="task02.c">
+    <ClCompile Include="task02.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="task01.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="globals.c">
+    <ClCompile Include="globals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
