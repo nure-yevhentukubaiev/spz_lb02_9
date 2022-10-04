@@ -4,3 +4,5 @@
 
 IWbemServices *pSvc = NULL;
 IWbemLocator *pLoc = NULL;
+IEnumWbemClassObject *pEnumerator = NULL;
+IWbemClassObject *pclsObj = NULL;

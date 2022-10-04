@@ -1,6 +1,11 @@
 #define _WIN32_DCOM
 #include "globals.h"
 #include "pch.h"
+#include "task01.h"
+#include "task02.h"
+#include "task03.h"
+#include "task04.h"
+#include "task05.h"
 
 HRESULT CoInit(VOID);
 
@@ -62,6 +67,7 @@ HRESULT WMIConnect(VOID)
 	);
 	if (FAILED(hr)) {
 		_tprintf_s(_T("ConnectServer failed, hr: %X\n"), hr);
+		return hr;
 	}
 
 	// Set the proxy so that impersonation of the client occurs.
@@ -86,13 +92,17 @@ VOID WMIClose(VOID)
 {
 	pSvc->Release();
 	pLoc->Release();
+	pclsObj->Release();
+	pEnumerator->Release();
 	return;
 }
 
 int _tmain(int argc, TCHAR **argv)
 {
-	HRESULT hr = CoInit() || WMIConnect();
+	HRESULT hr = CoInit();
+	hr = WMIConnect();
 	if (SUCCEEDED(hr)) {
+		Task01();
 	}
 	WMIClose();
 	CoUninitialize();
