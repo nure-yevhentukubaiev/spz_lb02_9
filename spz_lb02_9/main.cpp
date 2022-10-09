@@ -18,7 +18,7 @@ HRESULT CoInit(VOID)
 	
 	hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("CoInitializeEx failed, hr: %X\n"), hr);
+		_tprintf_s(_T("CoInitializeEx failed, hr: %lX\n"), hr);
 		return hr;
 	}
 
@@ -34,7 +34,7 @@ HRESULT CoInit(VOID)
 		NULL                         // Reserved
 	);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("CoInitializeSecurity failed, hr: %X\n"), hr);
+		_tprintf_s(_T("CoInitializeSecurity failed, hr: %lX\n"), hr);
 	}
 	return hr;
 }
@@ -50,7 +50,7 @@ HRESULT WMIConnect(VOID)
 		(LPVOID *)&pLoc
 	);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("CoCreateInstace failed, hr: %X\n"), hr);
+		_tprintf_s(_T("CoCreateInstace failed, hr: %lX\n"), hr);
 		return hr;
 	}
 	
@@ -65,7 +65,7 @@ HRESULT WMIConnect(VOID)
 		&pSvc
 	);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("ConnectServer failed, hr: %X\n"), hr);
+		_tprintf_s(_T("ConnectServer failed, hr: %lX\n"), hr);
 		return hr;
 	}
 
@@ -81,7 +81,7 @@ HRESULT WMIConnect(VOID)
 		EOAC_NONE
 	);
 	if(FAILED(hr)) {
-		_tprintf_s(_T("CoSetProxyBlanket failed, hr: %X\n"), hr);
+		_tprintf_s(_T("CoSetProxyBlanket failed, hr: %lX\n"), hr);
 	}
 
 	return hr;
@@ -98,6 +98,9 @@ VOID WMIClose(VOID)
 
 int _tmain(int argc, TCHAR **argv)
 {
+	UNREFERENCED_PARAMETER(argc);
+	UNREFERENCED_PARAMETER(argv);
+
 	HRESULT hr = CoInit();
 	hr = WMIConnect();
 	if (SUCCEEDED(hr)) {
