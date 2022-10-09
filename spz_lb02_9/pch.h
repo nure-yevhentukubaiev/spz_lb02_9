@@ -1,5 +1,7 @@
 #pragma once
-#include <stdio.h>
+
+#define _WIN32_DCOM
+
 #include <tchar.h>
 #include <windows.h>
 #include <wbemidl.h>

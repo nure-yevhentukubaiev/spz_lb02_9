@@ -1,4 +1,3 @@
-#define _WIN32_DCOM
 #include "globals.h"
 #include "pch.h"
 #include "task01.h"
