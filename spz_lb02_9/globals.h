@@ -8,4 +8,4 @@ extern IWbemLocator *pLoc;
 
 extern IEnumWbemClassObject *pEnumerator;
 
-extern IWbemClassObject *pclsObj;
+extern IWbemClassObject *pClsObj;

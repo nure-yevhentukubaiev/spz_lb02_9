@@ -2,7 +2,11 @@
 #include "pch.h"
 #include "globals.h"
 
-static LPCTSTR taskProps[] = { _T("Manufacturer"), _T("Name"), _T("Version") };
+static LPCTSTR taskProps[] = {
+	_T("Manufacturer"),
+	_T("Name"),
+	_T("Version")
+};
 
 HRESULT Task01(VOID)
 {
@@ -21,22 +25,20 @@ HRESULT Task01(VOID)
 
 	ULONG uRet = 0;
 	while (pEnumerator) {
-		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uRet);
+		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pClsObj, &uRet);
 		if (uRet == 0)
 			break;
 		VARIANT vt;
 		VariantInit(&vt);
-		for (LPCTSTR *prop = taskProps; prop; prop++) {
-			hr = pclsObj->Get(
+		for (LPCTSTR *prop = taskProps; prop && SUCCEEDED(hr); prop++) {
+			hr = pClsObj->Get(
 				*prop,
 				0,
 				&vt,
 				0,
 				0
 			);
-			if (SUCCEEDED(hr)) {
-				_tprintf_s(_T("%s: %s\n"), *prop, vt.bstrVal);
-			}
+			_tprintf_s(_T("%s: %s\n"), *prop, vt.bstrVal);
 		}
 		VariantClear(&vt);
 	}

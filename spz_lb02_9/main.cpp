@@ -92,7 +92,7 @@ VOID WMIClose(VOID)
 {
 	pSvc->Release();
 	pLoc->Release();
-	pclsObj->Release();
+	pClsObj->Release();
 	pEnumerator->Release();
 	return;
 }
