@@ -105,6 +105,7 @@ int _tmain(int argc, TCHAR **argv)
 	hr = WMIConnect();
 	if (SUCCEEDED(hr)) {
 		Task01();
+		Task04();
 	}
 	WMIClose();
 	CoUninitialize();
