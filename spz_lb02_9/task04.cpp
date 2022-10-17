@@ -5,73 +5,90 @@
 static LPCTSTR taskProps[] = {
 	_T("Name"),
 	_T("ProcessId"),
-	_T("Priority")
+	_T("Priority"),
+	NULL
 };
 
 HRESULT Task04(VOID)
 {
 	HRESULT hr = S_OK;
+	IWbemClassObject *pObj = NULL;
+	IEnumWbemClassObject *pEnum = NULL;
+	ULONG uRet = 0;
+	ULONG uPriority = UINT_MAX;
+	CIMTYPE cimtype;
 	VARIANT v;
 	VariantInit(&v);
 
-	_tprintf_s(_T("-- %s\n"), _T(__FUNCTION__));
+	std::tcout << _T("-- ") << _T(__FUNCTION__) << _T("\n");
 	
 	hr = pSvc->ExecQuery(
 		(BSTR)_T("WQL"),
-		(BSTR)_T(
-			"SELECT * "
-			"FROM Win32_Process "
-		),
+		(BSTR)_T("SELECT * ")
+			_T("FROM Win32_Process"),
 		WBEM_FLAG_RETURN_IMMEDIATELY,
 		NULL,
-		&pEnumerator
+		&pEnum
 	);
 
-	ULONG uRet = 0;
-	ULONG uPriority = UINT_MAX;
-	ULONG i = 0;
 	while (1) {
-		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pClsObj, &uRet);
+		hr = pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
 		if (uRet == 0)
 			break;
-		hr = pClsObj->Get(
+		hr = pObj->Get(
 			_T("Priority"), 0,
 			&v, NULL, NULL
 		);
-		if (v.ulVal < uPriority) uPriority = v.ulVal;
+		if (V_UI4(&v) < uPriority) uPriority = V_UI4(&v);
 	}
-	hr = pEnumerator->Reset();
-
+	
+	/*
+	 * Enumerate the second time and select only processes
+	 * with given priority = uPriority
+	 */
+	hr = pEnum->Reset();
 	while (1) {
-		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pClsObj, &uRet);
+		hr = pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
 		if (uRet == 0)
 			break;
-		hr = pClsObj->Get(
+		hr = pObj->Get(
 			_T("Priority"), 0,
 			&v, NULL, NULL
 		);
 		
-		if (v.ulVal == uPriority) {
+		if (V_UI4(&v) == uPriority) {
 			for (LPCTSTR *prop = taskProps; prop; prop++) {
-				HRESULT get_res = pClsObj->Get(
+				HRESULT get_res = pObj->Get(
 					*prop, 0,
-					&v, NULL, NULL
+					&v, &cimtype, NULL
 				);
-				if (FAILED(get_res)) break;
-				switch (V_VT(&v)) {
-				case VT_BSTR:
-					_tprintf_s(_T("%s: %s\n"), *prop, v.bstrVal);
+				if (FAILED(get_res))
 					break;
+				std::tcout << _T("\t") << *prop << _T(": ");
+				switch (cimtype) {
+				case CIM_STRING:
+					std::tcout << V_BSTR(&v);
+					break;
+				case CIM_SINT16:
+				case CIM_SINT32:
+				case CIM_SINT64:
+					std::tcout << V_I8(&v);
+					break;
+				case CIM_UINT16:
+				case CIM_UINT32:
+				case CIM_UINT64:
 				default:
-					_tprintf_s(_T("%s: %u\n"), *prop, v.ulVal);
+					std::tcout << V_UI8(&v);
 					break;
 				}
-				
+				std::tcout << _T("\n");
 			}
-			_tprintf_s(_T("\n"));
 		}
 	}
-	VariantClear(&v);
 
+	fail:
+	VariantClear(&v);
+	pObj->Release();
+	pEnum->Release();
 	return hr;
 }
