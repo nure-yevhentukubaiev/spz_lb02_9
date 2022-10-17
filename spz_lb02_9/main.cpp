@@ -110,6 +110,7 @@ int _tmain(int argc, TCHAR **argv)
 	hr = WMIConnect();
 	if (SUCCEEDED(hr)) {
 		Task01();
+		Task02();
 		Task03();
 		Task04();
 	}
