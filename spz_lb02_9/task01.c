@@ -8,9 +8,15 @@ static LPCTSTR taskProps[] = {
 	_T("Version")
 };
 
+#define tcout wcout
+
 HRESULT Task01(VOID)
 {
 	HRESULT hr = S_OK;
+	IWbemClassObject *pObj = NULL;
+	IEnumWbemClassObject *pEnum = NULL;
+	VARIANT v;
+	VariantInit(&v);
 
 	hr = pSvc->ExecQuery(
 		(BSTR)_T("WQL"),
@@ -18,33 +24,33 @@ HRESULT Task01(VOID)
 			"SELECT * "
 			"FROM Win32_BIOS"
 		),
-		WBEM_FLAG_FORWARD_ONLY
-		| WBEM_FLAG_RETURN_IMMEDIATELY,
-		NULL,
-		&pEnumerator
+		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+		NULL, &pEnum
 	);
+	if (FAILED(hr))
+		goto fail;
 
 	
-	while (pEnumerator) {
+	while (pEnum) {
 		ULONG uRet = 0;
-		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pClsObj, &uRet);
+		hr = pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
 		if (uRet == 0)
 			break;
-		VARIANT vt;
-		VariantInit(&vt);
 		for (LPCTSTR *prop = taskProps; prop; prop++) {
-			HRESULT get_res = pClsObj->Get(
-				*prop,
-				0,
-				&vt,
-				0,
-				0
+			HRESULT get_res = pObj->Get(
+				*prop, 0,
+				&v, 0, 0
 			);
-			if (FAILED(get_res)) break;
-			_tprintf_s(_T("%s: %s\n"), *prop, vt.bstrVal);
+			if (FAILED(get_res))
+				break;
+			std::tcout << *prop << _T(": ") << &v;
 		}
-		VariantClear(&vt);
+		
 	}
 
+	fail:
+	pEnum->Release();
+	pObj->Release();
+	VariantClear(&v);
 	return hr;
 }

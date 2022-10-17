@@ -5,7 +5,3 @@
 extern IWbemServices *pSvc;
 /* WMI Locator instance */
 extern IWbemLocator *pLoc;
-
-extern IEnumWbemClassObject *pEnumerator;
-
-extern IWbemClassObject *pClsObj;

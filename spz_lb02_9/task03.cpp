@@ -3,147 +3,315 @@
 #include "globals.h"
 
 static LPCTSTR lpszWin32ProcessProps[] = {
-	_T("ExecutablePath")        // a) шлях до виконуваного файлу процесу;
-	_T("CreationDate"),         // b) час початку процесу
+	_T("Name"),                 
+	_T("ExecutablePath"),       // a) шлях до виконуваного файлу процесу;
+	_T("CreationDate"),         // b) час початку процесу;
 	_T("Priority"),             // c) пріоритет процесу;
-	_T("ID"),                   // d) ідентифікатор процесу;
-	_T("ThreadCount")           // e) кількість активних потоків процесу;
+	_T("ProcessId"),            // d) ідентифікатор процесу;
+	_T("ThreadCount"),          // e) кількість активних потоків процесу;
+	NULL
 };
 
-
-
 static LPCTSTR lpszWin32ThreadProps[] = {
-	_T("ID"),                   // -ідентифікатор процесу, що створив потік;
+	_T("ProcessHandle"),        // -ідентифікатор процесу, що створив потік;
 	_T("Priority"),             // -динамічний пріоритет потоку;
 	_T("PriorityBase"),         // -базовий пріоритет потоку;
 	_T("ElapsedTime"),          // -загальний час виконання потоку;
-	_T("ExecutionState")        // -стан потоку.
+	_T("ExecutionState"),       // -стан потоку.
+	NULL
 };
 
-/* TODO: how to launch MS Access. Like that? */
-static CONST BSTR lpszProgCmdLine = SysAllocString(_T("C:\\Program Files(x86)\\Microsoft Office\\OFFICE11\\MSACCESS.EXE"));
+static CONST BSTR lpszProgCmdLine = SysAllocString(
+	_T("\"C:\\Program Files (x86)\\Microsoft Office\\OFFICE11\\MSACCESS.EXE\"")
+);
 
-static struct WMICreateProcessStruct {
-	CONST BSTR lpszArg;
-	CONST BSTR lpszVal;
-	CIMTYPE cimType;
-} WMICreateProcess[] = {
-	{(BSTR)_T("CommandLine"),               CIM_STRING},
-	{(BSTR)_T("ProcessStartupInformation"), CIM_OBJECT}
-};
+static BSTR bszProcessID = NULL;
 
-/* TODO: Is this a WMIDateToStringDate function? */
 /*
- Function WMIDateStringToDate(dtmInstallDate)
- WMIDateStringToDate = CDate(Mid(dtmInstallDate, 5, 2) & "/" & _
- Mid(dtmInstallDate, 7, 2) & "/" & Left(dtmInstallDate, 4) _
- & " " & Mid (dtmInstallDate, 9, 2) & ":" & _
- Mid(dtmInstallDate, 11, 2) & ":" & Mid(dtmInstallDate, _
- 13, 2))
-End Function
+ * Converts datetime in WMI format to human-readable datetime string
+ * Example:
+ * 20111201120159.000000+000 -> 01/12/2011 12:01:59
+ * YYYYMMDDhhmmss.uuuuuu+ggg -> DD/MM/YYYY hh:mm:ss
+ * See: https://learn.microsoft.com/en-us/previous-versions/tn-archive/ee156576(v=technet.10)?redirectedfrom=MSDN
  */
+static VOID WMIDateStringToDate(BSTR d)
+{
+	/* Date string copy */
+	CONST BSTR b = SysAllocString((CONST OLECHAR *)d);
+	_stprintf_s(
+		(wchar_t *)d, 70,
+		_T("%c%c/%c%c/%c%c%c%c %c%c:%c%c:%c%c\0"),
+		b[6], b[7], b[4], b[5], b[0], b[1], b[2], b[3], /* date */
+		b[8], b[9], b[10], b[11], b[12], b[13]          /* time */
+	);
+	SysFreeString(b);
+	return;
+}
 
-static HRESULT Task03_CreateProcess(IWbemClassObject *pClsProcessObj)
+static HRESULT Task03_SetProcessStartup(IWbemClassObject *pClsProcessStartupParam)
+{
+	HRESULT hr = S_OK;
+	VARIANT v;
+	VariantInit(&v);
+	
+	VarBstrFromUint(SW_MAXIMIZE, 0, 0, &V_BSTR(&v));
+	hr = pClsProcessStartupParam->Put(_T("ShowWindow"), 0, &v, 0);
+	
+	VarBstrFromUint(NORMAL_PRIORITY_CLASS, 0, 0, &V_BSTR(&v));
+	hr = pClsProcessStartupParam->Put(_T("PriorityClass"), 0, &v, 0);
+	
+	VariantClear(&v);
+	return hr;
+}
+
+static HRESULT Task03_SetProcessInParam(IWbemClassObject *pClsProcessInParam)
+{
+	HRESULT hr = S_OK;
+	IWbemClassObject *pClsProcessStartupParam = NULL;
+	VARIANT v;
+	VariantInit(&v);
+	
+	hr = pSvc->GetObject(
+		(BSTR)_T("Win32_ProcessStartup"), 0,
+		NULL, &pClsProcessStartupParam, NULL
+	);
+	if (FAILED(hr))
+		goto fail;
+
+	hr = Task03_SetProcessStartup(pClsProcessStartupParam);
+	
+	V_VT(&v) = VT_BSTR;
+	V_BSTR(&v) = lpszProgCmdLine;
+	hr = pClsProcessInParam->Put(_T("CommandLine"), 0, &v, CIM_STRING);
+
+	V_VT(&v) = VT_UNKNOWN;
+	V_UNKNOWN(&v) = pClsProcessStartupParam;
+	hr = pClsProcessInParam->Put(_T("ProcessStartupInformation"), 0, &v, CIM_OBJECT);
+
+	goto fail;
+	fail:
+	VariantClear(&v);
+	return S_OK;
+}
+
+static HRESULT Task03_CreateProcess(VOID)
 {
 	HRESULT hr = S_OK;
 	IWbemClassObject *pClsProcessInParam = NULL;
 	IWbemClassObject *pClsProcessOutParam = NULL;
-	IWbemCallResult *pRet = NULL;
-
-	hr = pClsProcessObj->GetMethod(
-		_T("Create"), 0,
-		&pClsProcessInParam, NULL
-	);
-
+	IWbemClassObject *pClsProcessDef = NULL;
+	IWbemClassObject *pClsProcessInParamInst = NULL;
+	static LPCTSTR lpszMethod = _T("Create");
+	static LPCTSTR lpszClass = _T("Win32_Process");
 	VARIANT v;
 	VariantInit(&v);
-	V_VT(&v) = VT_BSTR;
-	//V_BSTR(&v) = lpszProgPath;
-	for (WMICreateProcessStruct *i = WMICreateProcess; i; i++) {
-		V_BSTR(&v) = i->lpszVal;
-		hr = pClsProcessInParam->Put(
-			i->lpszArg,
-			0,
-			&v,
-			i->cimType
-		);
-	}
 
-	hr = pSvc->ExecMethod(
-		(BSTR)_T("Win32_Process"),
-		(BSTR)_T("Create"),
-		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-		NULL,
-		NULL,
-		&pClsProcessObj,
-		&pRet
+	hr = pSvc->GetObject(
+		(BSTR)lpszClass, 0,
+		NULL, &pClsProcessDef, NULL
 	);
 
-	if (FAILED(hr) || pRet == 0) {
-		_tprintf_s(_T("ExecMethod failed/no process found, hr: %lX\n"), hr);
+	hr = pClsProcessDef->GetMethod(
+		lpszMethod, 0,
+		&pClsProcessInParam, NULL
+	);
+	
+	hr = pClsProcessInParam->SpawnInstance(0, &pClsProcessInParamInst);
+
+	hr = Task03_SetProcessInParam(pClsProcessInParamInst);
+
+	hr = pSvc->ExecMethod(
+		(BSTR)lpszClass, (BSTR)lpszMethod, 0,
+		NULL, pClsProcessInParamInst, &pClsProcessOutParam, NULL
+	);
+	if (FAILED(hr)) {
+		_tprintf_s(_T("ExecMethod failed, hr: %lX\n"), hr);
 		goto fail;
 	}
-	while (TRUE) {
-		long lStatus = 0;
-		hr = pRet->GetCallStatus(5000, &lStatus);
-		if (hr == WBEM_S_NO_ERROR || hr != WBEM_S_TIMEDOUT)
+	
+	/* 
+	 * Acquire the created process ID for further querying
+	 */
+	pClsProcessOutParam->Get(
+		_T("ProcessId"), 0,
+		&v, 0, 0
+	);
+	VarBstrFromUint(V_UI4(&v), 0, 0, &bszProcessID);
+
+	fail:
+	VariantClear(&v);
+	pClsProcessInParamInst->Release();
+	pClsProcessInParam->Release();
+	pClsProcessOutParam->Release();
+	pClsProcessDef->Release();
+	return hr;
+}
+
+static HRESULT Task03_GetThreadPropsOfProcess(VOID)
+{
+	HRESULT hr = S_OK;
+	IEnumWbemClassObject *pEnum = NULL;
+	IWbemClassObject *pObj = NULL;
+	ULONG uRet = 0;
+	CIMTYPE cimtype;
+	VARIANT v;
+	BSTR bszQuery = SysAllocStringLen(NULL, 256);
+	VariantInit(&v);
+
+	VarBstrCat(
+		SysAllocString(
+		_T("SELECT * ")
+		_T("FROM Win32_Thread ")
+		_T("WHERE ProcessHandle=")
+		),
+		bszProcessID,
+		&bszQuery
+	);
+
+	hr = pSvc->ExecQuery(
+		(BSTR)_T("WQL"),
+		bszQuery,
+		WBEM_FLAG_FORWARD_ONLY,
+		NULL, &pEnum
+	);
+	if (FAILED(hr))
+		goto fail;
+
+	while (pEnum) {
+		pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
+		if (uRet == 0)
 			break;
+
+		std::tcout << _T("-");
+		for (LPCTSTR *prop = lpszWin32ThreadProps; *prop; prop++) {
+			HRESULT get_res = pObj->Get(
+				*prop, 0,
+				&v, &cimtype, 0
+			);
+			if (FAILED(get_res))
+				continue;
+
+			std::tcout << _T("\t") << *prop << _T(": ");
+			switch (cimtype) {
+			case CIM_STRING:
+				std::tcout << V_BSTR(&v);
+				break;
+			case CIM_SINT16:
+			case CIM_SINT32:
+			case CIM_SINT64:
+				std::tcout << V_I8(&v);
+				break;
+			case CIM_UINT16:
+			case CIM_UINT32:
+			case CIM_UINT64:
+			default:
+				std::tcout << V_UI8(&v);
+				break;
+			}
+			std::tcout << _T("\n");
+		}
 	}
 
-	hr = pRet->GetResultObject(5000, &pClsProcessObj);
+	fail:
+	VariantClear(&v);
+	pObj->Release();
+	pEnum->Release();
+	SysFreeString(bszQuery);
+	return hr;
+}
+
+static HRESULT Task03_GetProcessProps(VOID)
+{
+	HRESULT hr = S_OK;
+	IWbemClassObject *pObj = NULL;
+	IEnumWbemClassObject *pEnum = NULL;
+	ULONG uRet = 0;
+	CIMTYPE cimtype;
+	BSTR bszQuery = SysAllocStringLen(NULL, 256);
+	VARIANT v;
+	VariantInit(&v);
+
+	VarBstrCat(
+		SysAllocString(
+			_T("SELECT * ")
+			_T("FROM Win32_Process ")
+			_T("WHERE ProcessId=")
+		),
+		bszProcessID,
+		&bszQuery
+	);
+
+	hr = pSvc->ExecQuery(
+		(BSTR)_T("WQL"),
+		bszQuery,
+		WBEM_FLAG_FORWARD_ONLY,
+		NULL, &pEnum
+	);
+	if (FAILED(hr))
+		goto fail;
+
+	while (pEnum) {
+		pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
+		if (uRet == 0)
+			break;
+		for (LPCTSTR *prop = lpszWin32ProcessProps; *prop; prop++) {
+			HRESULT get_res = pObj->Get(
+				*prop, 0,
+				&v, &cimtype, 0
+			);
+			if (FAILED(get_res))
+				continue;
+			std::tcout << *prop << _T(": ");
+			switch (cimtype) {
+			case CIM_DATETIME:
+				WMIDateStringToDate(V_BSTR(&v));
+				/* nobreak; */
+			case CIM_STRING:
+				std::tcout << V_BSTR(&v);
+				break;
+			case CIM_SINT16:
+			case CIM_SINT32:
+			case CIM_SINT64:
+				std::tcout << V_I8(&v);
+				break;
+			case CIM_UINT16:
+			case CIM_UINT32:
+			case CIM_UINT64:
+			default:
+				std::tcout << V_UI8(&v);
+				break;
+			}
+			std::tcout << _T("\n");
+		}
+		std::tcout << _T("Threads:") << _T("\n");
+		pObj->Get(
+			_T("ProcessId"), 0,
+			&v, 0, 0
+		);
+		Task03_GetThreadPropsOfProcess();
+	}
+
+	fail:
+	VariantClear(&v);
+	pEnum->Release();
+	pObj->Release();
+	return hr;
 }
 
 HRESULT Task03(VOID)
 {
 	HRESULT hr = S_OK;
-	BSTR lpszWQLQuery = NULL;
-	IWbemClassObject *pClsProcessObj = 0;
 	
+	std::tcout << _T("-- ") << _T(__FUNCTION__) << "\n";
+
+	hr = Task03_CreateProcess();
 	if (FAILED(hr))
 		goto fail;
 
-	lpszWQLQuery = (BSTR)LocalAlloc(LMEM_ZEROINIT, lstrlen(lpszProgName) + 256);
-	_stprintf_s(
-		lpszWQLQuery, 1,
-		_T("SELECT * "
-		"FROM Win32_Process"
-		"WHERE Name=%s"),
-		lpszProgName
-	);
-	hr = pSvc->ExecQuery(
-		(BSTR)_T("WQL"),
-		lpszWQLQuery,
-		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-		NULL,
-		&pEnumerator
-	);
+	hr = Task03_GetProcessProps();
 	if (FAILED(hr))
 		goto fail;
 
-	while (pEnumerator) {
-		ULONG uRet = 0;
-		hr = pEnumerator->Next(WBEM_INFINITE, 1, &pClsObj, &uRet);
-		if (uRet == 0)
-			break;
-		VARIANT vt;
-		VariantInit(&vt);
-		for (LPCTSTR *prop = lpszWin32ProcessProps; prop; prop++) {
-			HRESULT get_res = pClsObj->Get(
-				*prop,
-				0,
-				&vt,
-				0,
-				0
-			);
-			if (FAILED(get_res)) break;
-			_tprintf_s(_T("%s: %s\n"), *prop, vt.bstrVal);
-		}
-		VariantClear(&vt);
-	}
-	
-fail:
-	pClsProcessObj->Release();
-	pRet->Release();
-	LocalFree(lpszWQLQuery);
+	fail:
 	return hr;
 }

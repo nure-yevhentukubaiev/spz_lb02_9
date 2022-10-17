@@ -18,8 +18,9 @@ HRESULT CoInit(VOID)
 	
 	hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("CoInitializeEx failed, hr: %lX\n"), hr);
-		return hr;
+		std::tcout << _T("CoInitializeEx failed, hr: ")
+			<< std::hex << hr << "\n";
+		goto fail;
 	}
 
 	hr = CoInitializeSecurity(
@@ -34,8 +35,12 @@ HRESULT CoInit(VOID)
 		NULL                         // Reserved
 	);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("CoInitializeSecurity failed, hr: %lX\n"), hr);
+		std::tcout << _T("CoInitializeSecurity failed, hr: ")
+			<< std::hex << hr << "\n";
+		goto fail;
 	}
+
+	fail:
 	return hr;
 }
 
@@ -50,40 +55,42 @@ HRESULT WMIConnect(VOID)
 		(LPVOID *)&pLoc
 	);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("CoCreateInstace failed, hr: %lX\n"), hr);
-		return hr;
+		std::tcout << _T("CoCreateInstace failed, hr: ")
+			<< std::hex << hr << "\n";
+		goto fail;
 	}
 	
 	hr = pLoc->ConnectServer(
 		(BSTR)_T("ROOT\\CimV2"),
-		NULL,
-		NULL,
-		0,
-		NULL,
-		0,
-		0,
-		&pSvc
+		NULL, NULL, NULL,
+		0, 0,
+		NULL, &pSvc
 	);
 	if (FAILED(hr)) {
-		_tprintf_s(_T("ConnectServer failed, hr: %lX\n"), hr);
-		return hr;
+		std::tcout << _T("ConnectServer failed, hr: ")
+			<< std::hex << hr << "\n";
+		goto fail;
 	}
 
 	// Set the proxy so that impersonation of the client occurs.
 	hr = CoSetProxyBlanket(
-		pSvc,
-		RPC_C_AUTHN_WINNT,
-		RPC_C_AUTHZ_NONE,
-		NULL,
-		RPC_C_AUTHN_LEVEL_CALL,
-		RPC_C_IMP_LEVEL_IMPERSONATE,
-		NULL,
-		EOAC_NONE
+		pSvc,                        // Indicates the proxy to set
+		RPC_C_AUTHN_WINNT,           // RPC_C_AUTHN_xxx 
+		RPC_C_AUTHZ_NONE,            // RPC_C_AUTHZ_xxx 
+		NULL,                        // Server principal name 
+		RPC_C_AUTHN_LEVEL_CALL,      // RPC_C_AUTHN_LEVEL_xxx 
+		RPC_C_IMP_LEVEL_IMPERSONATE, // RPC_C_IMP_LEVEL_xxx
+		NULL,                        // client identity
+		EOAC_NONE                    // proxy capabilities
 	);
-	if(FAILED(hr)) {
-		_tprintf_s(_T("CoSetProxyBlanket failed, hr: %lX\n"), hr);
+
+	if (FAILED(hr)) {
+		std::tcout << _T("CoSetProxyBlanket failed, hr: ")
+			<< std::hex << hr << "\n";
+		goto fail;
 	}
 
+	fail:
 	return hr;
 }
 
@@ -91,8 +98,6 @@ VOID WMIClose(VOID)
 {
 	pSvc->Release();
 	pLoc->Release();
-	pClsObj->Release();
-	pEnumerator->Release();
 	return;
 }
 
@@ -104,7 +109,8 @@ int _tmain(int argc, TCHAR **argv)
 	HRESULT hr = CoInit();
 	hr = WMIConnect();
 	if (SUCCEEDED(hr)) {
-		Task01();
+		//Task01();
+		Task03();
 	}
 	WMIClose();
 	CoUninitialize();

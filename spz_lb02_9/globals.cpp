@@ -1,8 +1,5 @@
-#include "globals.h"
-
 #include "pch.h"
+#include "globals.h"
 
 IWbemServices *pSvc = NULL;
 IWbemLocator *pLoc = NULL;
-IEnumWbemClassObject *pEnumerator = NULL;
-IWbemClassObject *pClsObj = NULL;
