@@ -2,55 +2,31 @@
 #include "pch.h"
 #include "globals.h"
 
-static LPCTSTR taskProps[] = {
-	_T("Manufacturer"),
-	_T("Name"),
-	_T("Version")
-};
-
-#define tcout wcout
+static CONST BSTR bszClass = SysAllocString(_T("Win32_BIOS"));
 
 HRESULT Task01(VOID)
 {
 	HRESULT hr = S_OK;
 	IWbemClassObject *pObj = NULL;
-	IEnumWbemClassObject *pEnum = NULL;
-	VARIANT v;
-	VariantInit(&v);
+	BSTR bszAllProps = NULL;
 
-	hr = pSvc->ExecQuery(
-		(BSTR)_T("WQL"),
-		(BSTR)_T(
-			"SELECT * "
-			"FROM Win32_BIOS"
-		),
-		WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-		NULL, &pEnum
+	std::tcout << _T("-- ") << _T(__FUNCTION__) << _T("\n");
+
+	hr = pSvc->GetObject(
+		bszClass, 0,
+		NULL, &pObj, NULL
 	);
 	if (FAILED(hr))
 		goto fail;
 
-	
-	while (pEnum) {
-		ULONG uRet = 0;
-		hr = pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
-		if (uRet == 0)
-			break;
-		for (LPCTSTR *prop = taskProps; prop; prop++) {
-			HRESULT get_res = pObj->Get(
-				*prop, 0,
-				&v, 0, 0
-			);
-			if (FAILED(get_res))
-				break;
-			std::tcout << *prop << _T(": ") << &v;
-		}
-		
-	}
+	hr = pObj->GetObjectText(0, &bszAllProps);
+	if (FAILED(hr))
+		goto fail;
 
+	std::tcout << bszAllProps;
+	
 	fail:
-	pEnum->Release();
+	SysFreeString(bszAllProps);
 	pObj->Release();
-	VariantClear(&v);
 	return hr;
 }
