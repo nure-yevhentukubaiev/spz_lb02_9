@@ -302,7 +302,7 @@ HRESULT Task03(VOID)
 {
 	HRESULT hr = S_OK;
 	
-	std::tcout << _T("-- ") << _T(__FUNCTION__) << "\n";
+	std::tcout << _T("-- ") << _T(__FUNCTION__) << _T("\n");
 
 	hr = Task03_CreateProcess();
 	if (FAILED(hr))
