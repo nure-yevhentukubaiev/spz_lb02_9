@@ -17,6 +17,8 @@ HRESULT Task02(VOID)
 	VARIANT v;
 	VariantInit(&v);
 
+	std::tcout << _T("-- ") << _T(__FUNCTION__) << _T("\n");
+
 	hr = pSvc->ExecQuery(
 		(BSTR)_T("WQL"),
 		(BSTR)_T(
