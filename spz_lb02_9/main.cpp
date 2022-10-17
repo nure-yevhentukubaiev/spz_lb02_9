@@ -113,6 +113,7 @@ int _tmain(int argc, TCHAR **argv)
 		Task02();
 		Task03();
 		Task04();
+		Task05();
 	}
 	WMIClose();
 	CoUninitialize();
