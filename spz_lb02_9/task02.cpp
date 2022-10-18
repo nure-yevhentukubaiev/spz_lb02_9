@@ -14,6 +14,7 @@ HRESULT Task02(VOID)
 	HRESULT hr = S_OK;
 	IWbemClassObject *pObj = NULL;
 	IEnumWbemClassObject *pEnum = NULL;
+	CIMTYPE cimtype = 0;
 	VARIANT v;
 	VariantInit(&v);
 
@@ -31,7 +32,6 @@ HRESULT Task02(VOID)
 	if (FAILED(hr))
 		goto fail;
 
-
 	while (1) {
 		ULONG uRet = 0;
 		hr = pEnum->Next(WBEM_INFINITE, 1, &pObj, &uRet);
@@ -40,11 +40,28 @@ HRESULT Task02(VOID)
 		for (LPCTSTR *prop = taskProps; *prop; prop++) {
 			HRESULT get_res = pObj->Get(
 				*prop, 0,
-				&v, 0, 0
+				&v, &cimtype, 0
 			);
 			if (FAILED(get_res))
 				break;
-			std::tcout << *prop << _T(": ") << &v << _T("\n");
+			std::tcout << *prop << _T(": ");
+			switch (cimtype) {
+			case CIM_STRING:
+				std::tcout << V_BSTR(&v);
+				break;
+			case CIM_SINT16:
+			case CIM_SINT32:
+			case CIM_SINT64:
+				std::tcout << V_I8(&v);
+				break;
+			case CIM_UINT16:
+			case CIM_UINT32:
+			case CIM_UINT64:
+			default:
+				std::tcout << V_UI8(&v);
+				break;
+			}
+			std::tcout << _T("\n");
 		}
 
 	}
