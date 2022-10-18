@@ -39,7 +39,7 @@ static VOID WMIDateStringToDate(BSTR d)
 	/* Date string copy */
 	CONST BSTR b = SysAllocString((CONST OLECHAR *)d);
 	_stprintf_s(
-		(wchar_t *)d, 70,
+		d, 35,
 		_T("%c%c/%c%c/%c%c%c%c %c%c:%c%c:%c%c\0"),
 		b[6], b[7], b[4], b[5], b[0], b[1], b[2], b[3], /* date */
 		b[8], b[9], b[10], b[11], b[12], b[13]          /* time */
@@ -155,15 +155,15 @@ static HRESULT Task03_GetThreadPropsOfProcess(VOID)
 	ULONG uRet = 0;
 	CIMTYPE cimtype;
 	VARIANT v;
-	BSTR bszQuery = SysAllocStringLen(NULL, 256);
-	VariantInit(&v);
-
-	VarBstrCat(
-		SysAllocString(
+	BSTR bszQuery = SysAllocString(
 		_T("SELECT * ")
 		_T("FROM Win32_Thread ")
 		_T("WHERE ProcessHandle=")
-		),
+	);
+	VariantInit(&v);
+
+	VarBstrCat(
+		bszQuery,
 		bszProcessID,
 		&bszQuery
 	);
@@ -227,16 +227,16 @@ static HRESULT Task03_GetProcessProps(VOID)
 	IEnumWbemClassObject *pEnum = NULL;
 	ULONG uRet = 0;
 	CIMTYPE cimtype;
-	BSTR bszQuery = SysAllocStringLen(NULL, 256);
+	BSTR bszQuery = SysAllocString(
+		_T("SELECT * ")
+		_T("FROM Win32_Process ")
+		_T("WHERE ProcessId=")
+	);
 	VARIANT v;
 	VariantInit(&v);
 
 	VarBstrCat(
-		SysAllocString(
-			_T("SELECT * ")
-			_T("FROM Win32_Process ")
-			_T("WHERE ProcessId=")
-		),
+		bszQuery,
 		bszProcessID,
 		&bszQuery
 	);
